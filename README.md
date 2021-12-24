@@ -9,7 +9,7 @@
 + IIS Web Server
 + Auto Deploy to IIS (git pull + dotnet publish)
 
-# Pros/Cons
+# Pros and Cons
 + **HTTP/3**
 + **OpenSSL 3**
 + Performance
