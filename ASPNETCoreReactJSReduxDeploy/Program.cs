@@ -49,10 +49,10 @@ namespace ASPNETCoreReactJSReduxDeploy
 
         public static void Print(object obj, string prefix = null)
         {
-            if (prefix != null) Debug.Write(obj);
+            if (prefix != null) Debug.Write(prefix);
             Debug.WriteLine(obj);
 
-            if (prefix != null) Console.Write(obj);
+            if (prefix != null) Console.Write(prefix);
             Console.WriteLine(obj);
         }
     }
@@ -93,17 +93,14 @@ namespace ASPNETCoreReactJSReduxDeploy
             startInfo.RedirectStandardOutput = true;
             startInfo.WorkingDirectory = solutionFolder;
             startInfo.FileName = "CMD";
-            startInfo.Arguments = $@"/c git pull origin master";
-            Program.Print(startInfo.Arguments, "CMD");
+            var args = $@"/c git pull origin master";
+            startInfo.Arguments = args;
+            Program.Print(args.Replace(@"/c", ""));
             process.StartInfo = startInfo;
             process.Start();
             string output = process.StandardOutput.ReadToEnd();
             Program.Print(output);
             process.WaitForExit();
-
-            //string gitCommand = "git";
-            //string gitPullArgument = " pull origin master";
-            //ProcessUtil.RunCommand(gitCommand, gitPullArgument, solutionFolder);
         }
     }
 
@@ -126,7 +123,7 @@ namespace ASPNETCoreReactJSReduxDeploy
             string programFiles = IISManagerUtil.ProgramFilesx86().Replace(" (x86)", "");
             string dotNet = $@"{programFiles}\dotnet\dotnet";
             string args = $" publish \"{projectFile}\" -c Release /p:PublishProfile=\"{publishProfile}\" -o \"{outputFolder}\"";
-            Program.Print(args, "dotnet");
+            Program.Print(args, Path.GetFileNameWithoutExtension(dotNet));
             ProcessUtil.RunCommand(dotNet, args);
         }
     }
@@ -159,7 +156,7 @@ namespace ASPNETCoreReactJSReduxDeploy
     {
         public static string ProgramFilesx86()
         {
-            if (8 == IntPtr.Size || (!String.IsNullOrEmpty(Environment.GetEnvironmentVariable("PROCESSOR_ARCHITEW6432"))))
+            if (8 == IntPtr.Size || (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("PROCESSOR_ARCHITEW6432"))))
             {
                 //Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86)
                 return Environment.GetEnvironmentVariable("ProgramFiles(x86)");
@@ -175,7 +172,7 @@ namespace ASPNETCoreReactJSReduxDeploy
             string appPool = siteName;
             string runtimeVersion = isNetCore ? string.Empty : "v4.0";
             string args = $" add apppool /name:\"{appPool}\" /managedRuntimeVersion:\"{runtimeVersion}\" /managedPipelineMode:\"Integrated\"";
-            Program.Print(args, "AppCmd");
+            Program.Print(args, Path.GetFileNameWithoutExtension(adminCmd));
             ProcessUtil.RunCommand(adminCmd, args);
         }
 
@@ -196,7 +193,7 @@ namespace ASPNETCoreReactJSReduxDeploy
 
             // Add Site
             string args = $" add site /name:\"{siteName}\" /id:{siteId} /physicalPath:\"{physicalPath}\" /bindings:{bindings}";
-            Program.Print(args, "AppCmd");
+            Program.Print(args, Path.GetFileNameWithoutExtension(adminCmd));
             ProcessUtil.RunCommand(adminCmd, args);
 
             // Edit site binding ssl certificate
@@ -204,7 +201,7 @@ namespace ASPNETCoreReactJSReduxDeploy
             {
                 string iisExpressAdminCmd = $@"{programFilesx86}\IIS Express\IISExpressAdminCmd";
                 args = $" setupsslUrl -url:https://{siteName}:{port} -UseSelfSigned";
-                Program.Print(args, "AppCmd");
+                Program.Print(args, Path.GetFileNameWithoutExtension(adminCmd));
                 ProcessUtil.RunCommand(iisExpressAdminCmd, args);
             }
 
@@ -213,7 +210,7 @@ namespace ASPNETCoreReactJSReduxDeploy
 
             // Set Application Pool to App
             args = $" set app \"{siteName}/\" /applicationPool:\"{appPool}\"";
-            Program.Print(args, "AppCmd");
+            Program.Print(args, Path.GetFileNameWithoutExtension(adminCmd));
             ProcessUtil.RunCommand(adminCmd, args);
         }
 
@@ -221,7 +218,7 @@ namespace ASPNETCoreReactJSReduxDeploy
         {
             string adminCmd = $@"{Environment.ExpandEnvironmentVariables("%WinDir%")}\system32\inetsrv\APPCMD";
             string args = $" recycle apppool \"{appPool}\"";
-            Program.Print(args, "AppCmd");
+            Program.Print(args, Path.GetFileNameWithoutExtension(adminCmd));
             ProcessUtil.RunCommand(adminCmd, args);
         }
 
@@ -333,7 +330,7 @@ namespace ASPNETCoreReactJSReduxDeploy
         {
             string adminCmd = $@"{Environment.ExpandEnvironmentVariables("%WinDir%")}\system32\inetsrv\APPCMD";
             string args = $" start sites \"{ siteName }\"";
-            Program.Print(args, "AppCmd");
+            Program.Print(args, Path.GetFileNameWithoutExtension(adminCmd));
             ProcessUtil.RunCommand(adminCmd, args);
         }
 
@@ -341,7 +338,7 @@ namespace ASPNETCoreReactJSReduxDeploy
         {
             string adminCmd = $@"{Environment.ExpandEnvironmentVariables("%WinDir%")}\system32\inetsrv\APPCMD";
             string args = $" stop sites \"{ siteName }\"";
-            Program.Print(args, "AppCmd");
+            Program.Print(args, Path.GetFileNameWithoutExtension(adminCmd));
             ProcessUtil.RunCommand(adminCmd, args);
         }
     }
@@ -367,7 +364,7 @@ namespace ASPNETCoreReactJSReduxDeploy
         public static string RunCommand(string filePath, string args, string workingDirectory = null)
         {
             StringBuilder sb = new StringBuilder();
-            args = !string.IsNullOrEmpty(args) ? $" {args}" : string.Empty;
+            args = !string.IsNullOrEmpty(args) ? $" {args.Trim()}" : string.Empty;
             var proc = new Process
             {
                 StartInfo = new ProcessStartInfo
@@ -384,13 +381,14 @@ namespace ASPNETCoreReactJSReduxDeploy
             {
                 proc.StartInfo.WorkingDirectory = workingDirectory;
             }
+            Program.Print(proc.StartInfo.Arguments, Path.GetFileNameWithoutExtension(filePath));
             proc.Start();
             while (!proc.StandardOutput.EndOfStream)
             {
                 sb.AppendLine(proc.StandardOutput.ReadLine());
             }
             string output = sb.ToString();
-            Program.Print(output, Path.GetFileNameWithoutExtension(filePath));
+            Program.Print(output);
             return output;
         }
     }
