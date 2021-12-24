@@ -18,33 +18,42 @@ namespace ASPNETCoreReactJSReduxDeploy
             string solutionFile = @"G:\Froala\VS2022\ASPNETCoreReactJSRedux\ASPNETCoreReactJSRedux.sln";
             string solutionName = Path.GetFileNameWithoutExtension(solutionFile);
             string solutionFolder = Path.GetDirectoryName(solutionFile);
-            Debug.WriteLine($"Solution Name: { solutionName }");
-            Debug.WriteLine($"Solution Folder: { solutionFolder }");
+            Print($"Solution Name: { solutionName }");
+            Print($"Solution Folder: { solutionFolder }");
             string projectFile = @"G:\Froala\VS2022\ASPNETCoreReactJSRedux\ASPNETCoreReactJSRedux\ASPNETCoreReactJSRedux.csproj";
             string projectName = Path.GetFileNameWithoutExtension(projectFile);
             string projectFolder = Path.GetDirectoryName(projectFile);
-            Debug.WriteLine($"Project Name: { projectName }");
-            Debug.WriteLine($"Project Folder: { projectFolder }");
+            Print($"Project Name: { projectName }");
+            Print($"Project Folder: { projectFolder }");
             GitUtil.Pull(solutionFolder);
             string hostName = projectName.PrettyName();
-            Debug.WriteLine($"Host Name: { hostName }");
+            Print($"Host Name: { hostName }");
             string siteName = hostName;
-            Debug.WriteLine($"Site Name: { siteName }");
+            Print($"Site Name: { siteName }");
             string physicalPath = $@"{Environment.ExpandEnvironmentVariables("%SystemDrive%")}\inetpub\wwwroot\{siteName}";
-            Debug.WriteLine($"Physical Path: { physicalPath }");
+            Print($"Physical Path: { physicalPath }");
             Directory.CreateDirectory(physicalPath);
             IISManagerUtil.StopSite(siteName);
             string publishProfile = $@"{projectFolder}\Properties\PublishProfiles\FolderProfile.pubxml";
             DotNetCoreUtil.Publish(projectFile, publishProfile, physicalPath);
             HostsFileUtil.SaveHosting(hostName);
             string appPool = siteName;
-            Debug.WriteLine($"Application Pool: { appPool }");
+            Print($"Application Pool: { appPool }");
             IISManagerUtil.AddAppPool(appPool, true);
             IISManagerUtil.AddSite(siteName, appPool, physicalPath, true, 443);
             IISManagerUtil.StartSite(siteName);
             IISManagerUtil.RecycleAppPool(appPool);
             IISManagerUtil.OpenSite(siteName, true, 443);
-            Console.WriteLine("DONE");
+            Print("DONE");
+        }
+
+        public static void Print(object obj, string prefix = null)
+        {
+            if (prefix != null) Debug.Write(obj);
+            Debug.WriteLine(obj);
+
+            if (prefix != null) Console.Write(obj);
+            Console.WriteLine(obj);
         }
     }
 
@@ -83,12 +92,13 @@ namespace ASPNETCoreReactJSReduxDeploy
             startInfo.UseShellExecute = false;
             startInfo.RedirectStandardOutput = true;
             startInfo.WorkingDirectory = solutionFolder;
-            startInfo.FileName = "CMD.exe";
+            startInfo.FileName = "CMD";
             startInfo.Arguments = $@"/c git pull origin master";
+            Program.Print(startInfo.Arguments, "CMD");
             process.StartInfo = startInfo;
             process.Start();
             string output = process.StandardOutput.ReadToEnd();
-            Console.WriteLine(output);
+            Program.Print(output);
             process.WaitForExit();
 
             //string gitCommand = "git";
@@ -116,7 +126,7 @@ namespace ASPNETCoreReactJSReduxDeploy
             string programFiles = IISManagerUtil.ProgramFilesx86().Replace(" (x86)", "");
             string dotNet = $@"{programFiles}\dotnet\dotnet";
             string args = $" publish \"{projectFile}\" -c Release /p:PublishProfile=\"{publishProfile}\" -o \"{outputFolder}\"";
-            Debug.WriteLine(args); Console.WriteLine(args);
+            Program.Print(args, "dotnet");
             ProcessUtil.RunCommand(dotNet, args);
         }
     }
@@ -165,7 +175,7 @@ namespace ASPNETCoreReactJSReduxDeploy
             string appPool = siteName;
             string runtimeVersion = isNetCore ? string.Empty : "v4.0";
             string args = $" add apppool /name:\"{appPool}\" /managedRuntimeVersion:\"{runtimeVersion}\" /managedPipelineMode:\"Integrated\"";
-            Debug.WriteLine(args); Console.WriteLine(args);
+            Program.Print(args, "AppCmd");
             ProcessUtil.RunCommand(adminCmd, args);
         }
 
@@ -186,7 +196,7 @@ namespace ASPNETCoreReactJSReduxDeploy
 
             // Add Site
             string args = $" add site /name:\"{siteName}\" /id:{siteId} /physicalPath:\"{physicalPath}\" /bindings:{bindings}";
-            Debug.WriteLine(args); Console.WriteLine(args);
+            Program.Print(args, "AppCmd");
             ProcessUtil.RunCommand(adminCmd, args);
 
             // Edit site binding ssl certificate
@@ -194,7 +204,7 @@ namespace ASPNETCoreReactJSReduxDeploy
             {
                 string iisExpressAdminCmd = $@"{programFilesx86}\IIS Express\IISExpressAdminCmd";
                 args = $" setupsslUrl -url:https://{siteName}:{port} -UseSelfSigned";
-                Debug.WriteLine(args); Console.WriteLine(args);
+                Program.Print(args, "AppCmd");
                 ProcessUtil.RunCommand(iisExpressAdminCmd, args);
             }
 
@@ -203,7 +213,7 @@ namespace ASPNETCoreReactJSReduxDeploy
 
             // Set Application Pool to App
             args = $" set app \"{siteName}/\" /applicationPool:\"{appPool}\"";
-            Debug.WriteLine(args); Console.WriteLine(args);
+            Program.Print(args, "AppCmd");
             ProcessUtil.RunCommand(adminCmd, args);
         }
 
@@ -211,7 +221,7 @@ namespace ASPNETCoreReactJSReduxDeploy
         {
             string adminCmd = $@"{Environment.ExpandEnvironmentVariables("%WinDir%")}\system32\inetsrv\APPCMD";
             string args = $" recycle apppool \"{appPool}\"";
-            Debug.WriteLine(args); Console.WriteLine(args);
+            Program.Print(args, "AppCmd");
             ProcessUtil.RunCommand(adminCmd, args);
         }
 
@@ -274,7 +284,7 @@ namespace ASPNETCoreReactJSReduxDeploy
             {
                 if (ip.AddressFamily == AddressFamily.InterNetwork)
                 {
-                    Debug.WriteLine($"IP Address: {ip}");
+                    Program.Print($"IP Address: {ip}");
                     i++; if (i == 2) ipAddress = ip.ToString();
                 }
             }
@@ -323,7 +333,7 @@ namespace ASPNETCoreReactJSReduxDeploy
         {
             string adminCmd = $@"{Environment.ExpandEnvironmentVariables("%WinDir%")}\system32\inetsrv\APPCMD";
             string args = $" start sites \"{ siteName }\"";
-            Debug.WriteLine(args); Console.WriteLine(args);
+            Program.Print(args, "AppCmd");
             ProcessUtil.RunCommand(adminCmd, args);
         }
 
@@ -331,7 +341,7 @@ namespace ASPNETCoreReactJSReduxDeploy
         {
             string adminCmd = $@"{Environment.ExpandEnvironmentVariables("%WinDir%")}\system32\inetsrv\APPCMD";
             string args = $" stop sites \"{ siteName }\"";
-            Debug.WriteLine(args); Console.WriteLine(args);
+            Program.Print(args, "AppCmd");
             ProcessUtil.RunCommand(adminCmd, args);
         }
     }
@@ -380,7 +390,7 @@ namespace ASPNETCoreReactJSReduxDeploy
                 sb.AppendLine(proc.StandardOutput.ReadLine());
             }
             string output = sb.ToString();
-            Debug.WriteLine(output);
+            Program.Print(output, Path.GetFileNameWithoutExtension(filePath));
             return output;
         }
     }
