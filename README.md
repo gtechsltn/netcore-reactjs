@@ -1,7 +1,14 @@
 # NetCore ReactJS
-
-+ ASP.NET Core 5.0
-+ ASP.NET Core 5.0 Web API
++ .NET 6.0
++ Long Term Support (LTS)
++ C# 10
++ Visual Studio 2022
++ **HTTP/3**
++ **OpenSSL 3**
++ Performance
++ **System.Text.Json** can use the C# source generation feature to improve performance, reduce private memory usage, and facilitate assembly trimming, which reduces app size.
++ ASP.NET Core 6.0
++ ASP.NET Core 6.0 Web API
 + ReactJS + Redux
 + Redux Saga
 + Debug.WriteLine() => File using System.Diagnostics.TextWriterTraceListener
